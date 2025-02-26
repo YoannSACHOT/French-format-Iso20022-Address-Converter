@@ -11,7 +11,7 @@ pub struct FrenchAddress {
     pub line7: Option<String>, // nom du Pays
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ISO20022Address {
     pub department: Option<String>, //Identification of a division of a large organization or building.
     pub sub_department: Option<String>, //Identification of a subdivision of a large organization or building.

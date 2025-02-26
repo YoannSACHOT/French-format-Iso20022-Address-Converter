@@ -7,3 +7,7 @@ use clap::Parser;
     about = "Convert French addresses to ISO 20022 format"
 )]
 pub struct Cli {}
+
+pub fn run(_cli: Cli) {
+    println!("Hello, world!");
+}
