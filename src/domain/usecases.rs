@@ -87,8 +87,8 @@ pub fn convert_to_iso(address: &FrenchAddress, kind: AddressKind) -> ISO20022Add
 pub fn convert_to_french(iso: &ISO20022Address) -> FrenchAddress {
     let mut french = FrenchAddress {
         id: iso.id.clone(),
-        line1: iso.building_name.clone(),
-        line2: None,
+        line1: iso.recipient_name.clone(), // ✅ Stocke bien recipient_name
+        line2: None,  // On corrigera ce champ après
         line3: iso.floor.clone(),
         line4: iso
             .building_number
@@ -119,7 +119,7 @@ pub fn convert_to_french(iso: &ISO20022Address) -> FrenchAddress {
 
     match iso.kind {
         AddressKind::Company => {
-            french.line2 = iso.department.clone();
+            french.line2 = iso.department.clone().or_else(|| iso.sub_department.clone()); // ✅ Correction
         }
         AddressKind::Particular => {
             french.line2 = iso.room.clone();
@@ -245,6 +245,7 @@ mod tests {
     fn test_convert_to_french_company() {
         let iso = ISO20022Address {
             id: "123".to_string(),
+            recipient_name: Some("DURAND SA".to_string()),
             kind: AddressKind::Company,
             department: Some("Finance Department".to_string()),
             floor: Some("5th Floor".to_string()),
@@ -260,6 +261,7 @@ mod tests {
         let french = convert_to_french(&iso);
 
         assert_eq!(french.id, "123");
+        assert_eq!(french.line1, Some("DURAND SA".to_string()));
         assert_eq!(french.line2, Some("Finance Department".to_string()));
         assert_eq!(french.line3, Some("5th Floor".to_string()));
         assert_eq!(french.line4, Some("1 Avenue de l'Opéra".to_string()));
@@ -271,6 +273,7 @@ mod tests {
     fn test_convert_to_french_particular() {
         let iso = ISO20022Address {
             id: "456".to_string(),
+            recipient_name: Some("Jean Dupont".to_string()),
             kind: AddressKind::Particular,
             room: Some("Apt. 12B".to_string()),
             floor: Some("3rd Floor".to_string()),
@@ -285,10 +288,39 @@ mod tests {
         let french = convert_to_french(&iso);
 
         assert_eq!(french.id, "456");
+        assert_eq!(french.line1, Some("Jean Dupont".to_string()));
         assert_eq!(french.line2, Some("Apt. 12B".to_string()));
         assert_eq!(french.line3, Some("3rd Floor".to_string()));
         assert_eq!(french.line4, Some("15 Rue des Lilas".to_string()));
         assert_eq!(french.line6, Some("69000 LYON".to_string()));
+        assert_eq!(french.line7, Some("France".to_string()));
+    }
+
+    #[test]
+    fn test_convert_to_french_company_with_department() {
+        let iso = ISO20022Address {
+            id: "123".to_string(),
+            kind: AddressKind::Company,
+            recipient_name: Some("DURAND SA".to_string()),
+            department: Some("Purchasing Department".to_string()),
+            floor: Some("Industrial Zone".to_string()),
+            building_number: Some("22BIS".to_string()),
+            street_name: Some("Rue des Fleurs".to_string()),
+            post_box: Some("BP 40122".to_string()),
+            post_code: Some("33506".to_string()),
+            town_name: Some("LIBOURNE CEDEX".to_string()),
+            country: Some("FR".to_string()),
+            ..Default::default()
+        };
+
+        let french = convert_to_french(&iso);
+
+        assert_eq!(french.line1, Some("DURAND SA".to_string()));
+        assert_eq!(french.line2, Some("Purchasing Department".to_string()));
+        assert_eq!(french.line3, Some("Industrial Zone".to_string()));
+        assert_eq!(french.line4, Some("22BIS Rue des Fleurs".to_string()));
+        assert_eq!(french.line5, Some("BP 40122".to_string()));
+        assert_eq!(french.line6, Some("33506 LIBOURNE CEDEX".to_string()));
         assert_eq!(french.line7, Some("France".to_string()));
     }
 }
