@@ -5,11 +5,12 @@ mod infrastructure;
 
 use crate::infrastructure::in_memory_repository::InMemoryAddressRepository;
 use uuid::Uuid;
+use fraddris020022::domain::repository::AddressRepository;
 
 #[test]
 fn particular_with_all_data() {
-    let repository = InMemoryAddressRepository::new();
-    let mut service = AddressService::new(repository);
+    let repo: Box<dyn AddressRepository> = Box::new(InMemoryAddressRepository::new());
+    let mut service = AddressService::new(repo);
 
     let id = Uuid::new_v4().to_string();
 
@@ -119,8 +120,8 @@ fn particular_with_all_data() {
 
 #[test]
 fn company_with_all_data() {
-    let repository = InMemoryAddressRepository::new();
-    let mut service = AddressService::new(repository);
+    let repo: Box<dyn AddressRepository> = Box::new(InMemoryAddressRepository::new());
+    let mut service = AddressService::new(repo);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -226,8 +227,8 @@ fn company_with_all_data() {
 
 #[test]
 fn private_individual_with_apartment() {
-    let repository = InMemoryAddressRepository::new();
-    let service = AddressService::new(repository);
+    let repo: Box<dyn AddressRepository> = Box::new(InMemoryAddressRepository::new());
+    let service = AddressService::new(repo);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -258,8 +259,8 @@ fn private_individual_with_apartment() {
 
 #[test]
 fn company_without_department() {
-    let repository = InMemoryAddressRepository::new();
-    let service = AddressService::new(repository);
+    let repo: Box<dyn AddressRepository> = Box::new(InMemoryAddressRepository::new());
+    let service = AddressService::new(repo);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -288,8 +289,8 @@ fn company_without_department() {
 
 #[test]
 fn private_individual_with_po_box() {
-    let repository = InMemoryAddressRepository::new();
-    let service = AddressService::new(repository);
+    let repo: Box<dyn AddressRepository> = Box::new(InMemoryAddressRepository::new());
+    let service = AddressService::new(repo);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -314,8 +315,8 @@ fn private_individual_with_po_box() {
 
 #[test]
 fn company_with_multiple_floors() {
-    let repository = InMemoryAddressRepository::new();
-    let service = AddressService::new(repository);
+    let repo: Box<dyn AddressRepository> = Box::new(InMemoryAddressRepository::new());
+    let service = AddressService::new(repo);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
