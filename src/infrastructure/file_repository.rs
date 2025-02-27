@@ -43,9 +43,9 @@ impl AddressRepository for FileBasedAddressRepository {
         }
     }
 
-    fn delete(&mut self, address_id: String) -> Result<(), String> {
+    fn delete(&mut self, address_id: &str) -> Result<(), String> {
         let mut data = self.load_data();
-        if data.remove(&address_id).is_some() {
+        if data.remove(address_id).is_some() {
             self.save_data(&data);
             Ok(())
         } else {
@@ -53,9 +53,9 @@ impl AddressRepository for FileBasedAddressRepository {
         }
     }
 
-    fn find_by_id(&self, address_id: String) -> Option<ISO20022Address> {
+    fn find_by_id(&self, address_id: &str) -> Option<ISO20022Address> {
         let data = self.load_data();
-        data.get(&address_id).cloned()
+        data.get(address_id).cloned()
     }
 
     fn find_all(&self) -> Vec<ISO20022Address> {
