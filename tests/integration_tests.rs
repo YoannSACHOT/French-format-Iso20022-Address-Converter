@@ -56,6 +56,7 @@ fn particular_with_all_data() {
 
     let address_update = ISO20022Address {
         id: id.clone(),
+        recipient_name: Some("Josh Homme".to_string()),
         kind: AddressKind::Particular,
         department: None,
         sub_department: None,
@@ -162,6 +163,7 @@ fn company_with_all_data() {
 
     let address_update = ISO20022Address {
         id: id.clone(),
+        recipient_name: Some("DURAND SA".to_string()),
         kind: AddressKind::Company,
         department: Some("COMPTABILITE".to_string()),
         sub_department: Some("BILANS".to_string()),
