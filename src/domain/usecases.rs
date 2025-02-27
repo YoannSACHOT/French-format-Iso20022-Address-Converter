@@ -64,9 +64,14 @@ fn process_common_fields(address: &FrenchAddress, iso: &mut ISO20022Address) {
 }
 
 pub fn convert_to_iso(address: &FrenchAddress, kind: AddressKind) -> ISO20022Address {
+    println!("DEBUG - AddressKind: {:?}", kind);
+
     let mut iso = ISO20022Address::default();
     iso.id = address.id.clone();
-    iso.recipient_name = address.line1.clone(); // ✅ Stocke line1 dans recipient_name
+    iso.recipient_name = address.line1.clone();
+    iso.kind = kind; // 🚨 Si ici `kind` est Particular, l'erreur vient de l'appel
+
+    println!("DEBUG - ISO20022Address before update: {:#?}", iso);
 
     process_common_fields(address, &mut iso);
 
@@ -81,14 +86,16 @@ pub fn convert_to_iso(address: &FrenchAddress, kind: AddressKind) -> ISO20022Add
         }
     }
 
+    println!("DEBUG - ISO20022Address after update: {:#?}", iso);
     iso
 }
+
 
 pub fn convert_to_french(iso: &ISO20022Address) -> FrenchAddress {
     let mut french = FrenchAddress {
         id: iso.id.clone(),
-        line1: iso.recipient_name.clone(), // ✅ Stocke bien recipient_name
-        line2: None,  // On corrigera ce champ après
+        line1: iso.recipient_name.clone(),
+        line2: None, // On corrigera ce champ après
         line3: iso.floor.clone(),
         line4: iso
             .building_number
@@ -119,7 +126,10 @@ pub fn convert_to_french(iso: &ISO20022Address) -> FrenchAddress {
 
     match iso.kind {
         AddressKind::Company => {
-            french.line2 = iso.department.clone().or_else(|| iso.sub_department.clone()); // ✅ Correction
+            french.line2 = iso
+                .department
+                .clone()
+                .or_else(|| iso.sub_department.clone());
         }
         AddressKind::Particular => {
             french.line2 = iso.room.clone();
@@ -302,7 +312,7 @@ mod tests {
             id: "123".to_string(),
             kind: AddressKind::Company,
             recipient_name: Some("DURAND SA".to_string()),
-            department: Some("Purchasing Department".to_string()),
+            department: Some("Purchasing Department".to_string()), // ✅ Ce champ doit être converti en `line2`
             floor: Some("Industrial Zone".to_string()),
             building_number: Some("22BIS".to_string()),
             street_name: Some("Rue des Fleurs".to_string()),
@@ -316,7 +326,7 @@ mod tests {
         let french = convert_to_french(&iso);
 
         assert_eq!(french.line1, Some("DURAND SA".to_string()));
-        assert_eq!(french.line2, Some("Purchasing Department".to_string()));
+        assert_eq!(french.line2, Some("Purchasing Department".to_string())); // ✅ Vérification
         assert_eq!(french.line3, Some("Industrial Zone".to_string()));
         assert_eq!(french.line4, Some("22BIS Rue des Fleurs".to_string()));
         assert_eq!(french.line5, Some("BP 40122".to_string()));

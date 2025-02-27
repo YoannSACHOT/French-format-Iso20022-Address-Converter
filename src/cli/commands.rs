@@ -150,6 +150,8 @@ pub fn run(cli: Cli) {
                 }
             };
 
+            println!("DEBUG - AddressKind: {:?}", kind);
+
             let french_address = FrenchAddress {
                 id: id.clone(),
                 line1,
