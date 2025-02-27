@@ -1,4 +1,5 @@
 use crate::domain::models::ISO20022Address;
+use crate::domain::usecases::convert_to_french;
 use crate::domain::{
     models::FrenchAddress,
     repository::AddressRepository,
@@ -18,8 +19,12 @@ impl<R: AddressRepository> AddressService<R> {
         self.repository.save(address)
     }
 
-    pub fn convert_address(&self, address: &FrenchAddress, kind: AddressKind) -> ISO20022Address {
+    pub fn convert_to_iso(&self, address: &FrenchAddress, kind: AddressKind) -> ISO20022Address {
         convert_to_iso(&address, kind)
+    }
+
+    pub fn convert_to_french(&self, address: &ISO20022Address) -> FrenchAddress {
+        convert_to_french(&address)
     }
 
     pub fn get_all_addresses(&self) -> Vec<ISO20022Address> {

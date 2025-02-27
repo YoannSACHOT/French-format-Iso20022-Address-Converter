@@ -18,6 +18,12 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Convert an ISO20022 address back to a French address
+    Convert {
+        /// Address ID
+        #[arg(short, long)]
+        id: String,
+    },
     /// Add a new address to the repository
     Add {
         /// Address type: "company" or "particular"
@@ -116,6 +122,14 @@ pub fn run(cli: Cli) {
     let mut service = AddressService::new(repo);
 
     match cli.command {
+        Commands::Convert { id } => {
+            if let Some(iso_address) = service.get_address(&id) {
+                let french_address = service.convert_to_french(&iso_address);
+                println!("{:#?}", french_address);
+            } else {
+                println!("Address with ID {} not found.", id);
+            }
+        }
         Commands::Add {
             kind,
             line1,
@@ -147,9 +161,9 @@ pub fn run(cli: Cli) {
                 line7,
             };
 
-            let converted_address = service.convert_address(&french_address, kind);
+            let converted_address = service.convert_to_iso(&french_address, kind);
             if service.add_address(converted_address).is_ok() {
-                println!("✅ Address added successfully with ID: {}", id);
+                println!("Address added successfully with ID: {}", id);
             } else {
                 println!("Failed to add address.");
             }
@@ -182,7 +196,7 @@ pub fn run(cli: Cli) {
             line6,
             line7,
         } => {
-            if let Some(mut existing_address) = service.get_address(&id) {
+            if let Some(existing_address) = service.get_address(&id) {
                 let kind = match kind.to_lowercase().as_str() {
                     "company" => AddressKind::Company,
                     "particular" => AddressKind::Particular,
@@ -203,7 +217,7 @@ pub fn run(cli: Cli) {
                     line7: line7.or(existing_address.country.clone()),
                 };
 
-                let updated_address = service.convert_address(&updated_french_address, kind);
+                let updated_address = service.convert_to_iso(&updated_french_address, kind);
                 if service.update_address(updated_address).is_ok() {
                     println!("Address with ID {} updated successfully.", id);
                 } else {

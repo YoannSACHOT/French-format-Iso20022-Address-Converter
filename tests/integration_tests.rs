@@ -22,7 +22,7 @@ fn particular_with_all_data() {
         line7: Some("France".to_string()),
     };
 
-    let converted_address = service.convert_address(&address, AddressKind::Particular);
+    let converted_address = service.convert_to_iso(&address, AddressKind::Particular);
 
     assert_eq!(converted_address.id, id);
 
@@ -56,6 +56,7 @@ fn particular_with_all_data() {
 
     let address_update = ISO20022Address {
         id: id.clone(),
+        kind: AddressKind::Particular,
         department: None,
         sub_department: None,
         building_name: Some("Entrée 6".to_string()),
@@ -130,7 +131,7 @@ fn company_with_all_data() {
         line7: Some("France".to_string()),
     };
 
-    let converted_address = service.convert_address(&address, AddressKind::Company);
+    let converted_address = service.convert_to_iso(&address, AddressKind::Company);
 
     assert_eq!(converted_address.id, id);
 
@@ -143,30 +144,25 @@ fn company_with_all_data() {
     assert!(stored_address.is_some(), "Address not found in repository");
     let stored_address = stored_address.unwrap();
 
-    assert_eq!(converted_address.id, id);
+    assert_eq!(stored_address.id, id);
+    assert_eq!(stored_address.department, Some("Service achat".to_string()));
     assert_eq!(
-        converted_address.department,
-        Some("Service achat".to_string())
-    );
-    assert_eq!(
-        converted_address.floor,
+        stored_address.floor,
         Some("Zone industrielle de la Ballastière Ouest".to_string())
     );
     assert_eq!(
-        converted_address.street_name,
+        stored_address.street_name,
         Some("RUE DES FLEURS".to_string())
     );
-    assert_eq!(converted_address.building_number, Some("22BIS".to_string()));
-    assert_eq!(converted_address.post_box, Some("BP 40122".to_string()));
-    assert_eq!(converted_address.post_code, Some("33506".to_string()));
-    assert_eq!(
-        converted_address.town_name,
-        Some("LIBOURNE CEDEX".to_string())
-    );
-    assert_eq!(converted_address.country, Some("FR".to_string()));
+    assert_eq!(stored_address.building_number, Some("22BIS".to_string()));
+    assert_eq!(stored_address.post_box, Some("BP 40122".to_string()));
+    assert_eq!(stored_address.post_code, Some("33506".to_string()));
+    assert_eq!(stored_address.town_name, Some("LIBOURNE CEDEX".to_string()));
+    assert_eq!(stored_address.country, Some("FR".to_string()));
 
     let address_update = ISO20022Address {
         id: id.clone(),
+        kind: AddressKind::Company,
         department: Some("COMPTABILITE".to_string()),
         sub_department: Some("BILANS".to_string()),
         building_name: Some("Entrée 6".to_string()),
@@ -227,7 +223,7 @@ fn company_with_all_data() {
 #[test]
 fn private_individual_with_apartment() {
     let repository = InMemoryAddressRepository::new();
-    let mut service = AddressService::new(repository);
+    let service = AddressService::new(repository);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -241,7 +237,7 @@ fn private_individual_with_apartment() {
         line7: Some("France".to_string()),
     };
 
-    let converted_address = service.convert_address(&address, AddressKind::Particular);
+    let converted_address = service.convert_to_iso(&address, AddressKind::Particular);
 
     assert_eq!(converted_address.id, id);
     assert_eq!(converted_address.room, Some("Apt. 12B".to_string()));
@@ -259,7 +255,7 @@ fn private_individual_with_apartment() {
 #[test]
 fn company_without_department() {
     let repository = InMemoryAddressRepository::new();
-    let mut service = AddressService::new(repository);
+    let service = AddressService::new(repository);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -273,7 +269,7 @@ fn company_without_department() {
         line7: Some("France".to_string()),
     };
 
-    let converted_address = service.convert_address(&address, AddressKind::Company);
+    let converted_address = service.convert_to_iso(&address, AddressKind::Company);
 
     assert_eq!(converted_address.id, id);
     assert_eq!(
@@ -289,7 +285,7 @@ fn company_without_department() {
 #[test]
 fn private_individual_with_po_box() {
     let repository = InMemoryAddressRepository::new();
-    let mut service = AddressService::new(repository);
+    let service = AddressService::new(repository);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -303,7 +299,7 @@ fn private_individual_with_po_box() {
         line7: Some("France".to_string()),
     };
 
-    let converted_address = service.convert_address(&address, AddressKind::Particular);
+    let converted_address = service.convert_to_iso(&address, AddressKind::Particular);
 
     assert_eq!(converted_address.id, id);
     assert_eq!(converted_address.post_box, Some("BP 1234".to_string()));
@@ -315,7 +311,7 @@ fn private_individual_with_po_box() {
 #[test]
 fn company_with_multiple_floors() {
     let repository = InMemoryAddressRepository::new();
-    let mut service = AddressService::new(repository);
+    let service = AddressService::new(repository);
 
     let id = Uuid::new_v4().to_string();
     let address = FrenchAddress {
@@ -329,7 +325,7 @@ fn company_with_multiple_floors() {
         line7: Some("France".to_string()),
     };
 
-    let converted_address = service.convert_address(&address, AddressKind::Company);
+    let converted_address = service.convert_to_iso(&address, AddressKind::Company);
 
     assert_eq!(converted_address.id, id);
     assert_eq!(
