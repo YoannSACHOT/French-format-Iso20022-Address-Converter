@@ -1,25 +1,65 @@
-use crate::domain::models::FrenchAddress;
+use crate::domain::models::ISO20022Address;
+use crate::domain::repository::AddressRepository;
 use serde_json;
-use std::error::Error;
-use std::fs::{File, OpenOptions};
-use std::io::Read;
+use std::collections::HashMap;
+use std::fs;
 
-const FILE_PATH: &str = "addresses.json";
-
-pub fn save_addresses(addresses: &Vec<FrenchAddress>) -> Result<(), Box<dyn Error>> {
-    let file = File::create(FILE_PATH)?;
-    serde_json::to_writer(file, &addresses)?;
-    Ok(())
+pub struct FileBasedAddressRepository {
+    file_path: String,
 }
 
-pub fn load_addresses() -> Vec<FrenchAddress> {
-    let mut file = OpenOptions::new()
-        .read(true)
-        .open(FILE_PATH)
-        .unwrap_or_else(|_| File::create(FILE_PATH).unwrap());
+impl FileBasedAddressRepository {
+    pub fn new(file_path: String) -> Self {
+        Self { file_path }
+    }
 
-    let mut content = String::new();
-    file.read_to_string(&mut content).unwrap();
+    fn load_data(&self) -> HashMap<String, ISO20022Address> {
+        let data = fs::read_to_string(&self.file_path).unwrap_or("{}".to_string());
+        serde_json::from_str(&data).unwrap_or_else(|_| HashMap::new())
+    }
 
-    serde_json::from_str(&content).unwrap_or_else(|_| Vec::new())
+    fn save_data(&self, data: &HashMap<String, ISO20022Address>) {
+        let json = serde_json::to_string_pretty(data).unwrap();
+        fs::write(&self.file_path, json).expect("File write failed");
+    }
+}
+
+impl AddressRepository for FileBasedAddressRepository {
+    fn save(&mut self, address: ISO20022Address) -> Result<(), String> {
+        let mut data = self.load_data();
+        data.insert(address.id.clone(), address);
+        self.save_data(&data);
+        Ok(())
+    }
+
+    fn update(&mut self, address: ISO20022Address) -> Result<(), String> {
+        let mut data = self.load_data();
+        if data.contains_key(&address.id) {
+            data.insert(address.id.clone(), address);
+            self.save_data(&data);
+            Ok(())
+        } else {
+            Err("Address not found".to_string())
+        }
+    }
+
+    fn delete(&mut self, address_id: String) -> Result<(), String> {
+        let mut data = self.load_data();
+        if data.remove(&address_id).is_some() {
+            self.save_data(&data);
+            Ok(())
+        } else {
+            Err("Address not found".to_string())
+        }
+    }
+
+    fn find_by_id(&self, address_id: String) -> Option<ISO20022Address> {
+        let data = self.load_data();
+        data.get(&address_id).cloned()
+    }
+
+    fn find_all(&self) -> Vec<ISO20022Address> {
+        let data = self.load_data();
+        data.values().cloned().collect()
+    }
 }

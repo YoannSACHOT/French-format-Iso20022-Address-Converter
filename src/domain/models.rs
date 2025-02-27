@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FrenchAddress {
+    pub id: String,
     pub line1: Option<String>,
     pub line2: Option<String>, // Identité du destinataire et/ou Service Max 38 caractères
     pub line3: Option<String>, // Identification du point géographique (Entrée, immeuble, bâtiment,résidence, zone industrielle) Max 38 caractères
@@ -13,6 +14,7 @@ pub struct FrenchAddress {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ISO20022Address {
+    pub id: String,
     pub department: Option<String>, //Identification of a division of a large organization or building.
     pub sub_department: Option<String>, //Identification of a subdivision of a large organization or building.
     pub building_name: Option<String>,  //Name of a building or house
