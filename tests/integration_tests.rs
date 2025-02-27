@@ -1,7 +1,9 @@
 use fraddris020022::application::address_service::AddressService;
 use fraddris020022::domain::models::{FrenchAddress, ISO20022Address};
 use fraddris020022::domain::usecases::AddressKind;
-use fraddris020022::infrastructure::in_memory_repository::InMemoryAddressRepository;
+mod infrastructure;
+
+use crate::infrastructure::in_memory_repository::InMemoryAddressRepository;
 use uuid::Uuid;
 
 #[test]
