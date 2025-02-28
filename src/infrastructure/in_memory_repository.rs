@@ -1,5 +1,5 @@
-use fraddris020022::domain::models::ISO20022Address;
-use fraddris020022::domain::repository::AddressRepository;
+use crate::domain::models::ISO20022Address;
+use crate::domain::repository::AddressRepository;
 use std::collections::HashMap;
 
 pub struct InMemoryAddressRepository {

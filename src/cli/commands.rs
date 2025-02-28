@@ -2,7 +2,6 @@ use crate::application::address_service::AddressService;
 use crate::domain::models::FrenchAddress;
 use crate::domain::repository::AddressRepository;
 use crate::domain::usecases::AddressKind;
-use crate::infrastructure::file_repository::FileBasedAddressRepository;
 use clap::{Parser, Subcommand};
 use uuid::Uuid;
 
@@ -72,10 +71,7 @@ pub enum Commands {
     },
 }
 
-pub fn run(cli: Cli) {
-    let repo: Box<dyn AddressRepository> = Box::new(FileBasedAddressRepository::new(
-        "addresses.json".to_string(),
-    ));
+pub fn run(cli: Cli, repo: Box<dyn AddressRepository>) {
     let mut service = AddressService::new(repo);
 
     match cli.command {

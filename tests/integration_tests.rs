@@ -1,11 +1,10 @@
 use fraddris020022::application::address_service::AddressService;
 use fraddris020022::domain::models::{FrenchAddress, ISO20022Address};
 use fraddris020022::domain::usecases::AddressKind;
-mod infrastructure;
 
-use crate::infrastructure::in_memory_repository::InMemoryAddressRepository;
-use uuid::Uuid;
 use fraddris020022::domain::repository::AddressRepository;
+use fraddris020022::infrastructure::in_memory_repository::InMemoryAddressRepository;
+use uuid::Uuid;
 
 #[test]
 fn particular_with_all_data() {
