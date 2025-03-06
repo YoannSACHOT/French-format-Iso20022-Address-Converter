@@ -1,13 +1,6 @@
-use crate::domain::models::{FrenchAddress, ISO20022Address};
+use crate::domain::models::{AddressKind, FrenchAddress, ISO20022Address};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
-pub enum AddressKind {
-    #[default]
-    Particular,
-    Company,
-}
 
 fn parse_postal_code_and_town(s: &str) -> (Option<String>, Option<String>) {
     let s = s.trim();
