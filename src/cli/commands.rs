@@ -1,7 +1,6 @@
 use crate::application::address_service::AddressService;
-use crate::domain::models::FrenchAddress;
+use crate::domain::models::{AddressKind, FrenchAddress};
 use crate::domain::repository::AddressRepository;
-use crate::domain::usecases::AddressKind;
 use clap::{Parser, Subcommand};
 use uuid::Uuid;
 
