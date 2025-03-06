@@ -1,6 +1,5 @@
 use crate::domain::models::{AddressKind, FrenchAddress, ISO20022Address};
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 
 fn parse_postal_code_and_town(s: &str) -> (Option<String>, Option<String>) {
     let s = s.trim();
