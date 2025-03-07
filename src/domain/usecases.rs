@@ -61,7 +61,7 @@ pub fn convert_to_iso(address: &FrenchAddress, kind: AddressKind) -> ISO20022Add
     let mut iso = ISO20022Address::default();
     iso.id = address.id.clone();
     iso.recipient_name = address.line1.clone();
-    iso.kind = kind; // 🚨 Si ici `kind` est Particular, l'erreur vient de l'appel
+    iso.kind = kind;
 
     println!("DEBUG - ISO20022Address before update: {:#?}", iso);
 
