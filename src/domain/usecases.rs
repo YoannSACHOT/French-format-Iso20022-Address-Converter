@@ -304,7 +304,7 @@ mod tests {
             id: "123".to_string(),
             kind: AddressKind::Company,
             recipient_name: Some("DURAND SA".to_string()),
-            department: Some("Purchasing Department".to_string()), // ✅ Ce champ doit être converti en `line2`
+            department: Some("Purchasing Department".to_string()),
             floor: Some("Industrial Zone".to_string()),
             building_number: Some("22BIS".to_string()),
             street_name: Some("Rue des Fleurs".to_string()),
@@ -318,7 +318,7 @@ mod tests {
         let french = convert_to_french(&iso);
 
         assert_eq!(french.line1, Some("DURAND SA".to_string()));
-        assert_eq!(french.line2, Some("Purchasing Department".to_string())); // ✅ Vérification
+        assert_eq!(french.line2, Some("Purchasing Department".to_string()));
         assert_eq!(french.line3, Some("Industrial Zone".to_string()));
         assert_eq!(french.line4, Some("22BIS Rue des Fleurs".to_string()));
         assert_eq!(french.line5, Some("BP 40122".to_string()));
