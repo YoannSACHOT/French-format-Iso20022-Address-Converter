@@ -1,4 +1,3 @@
-use crate::domain::usecases::AddressKind;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -32,4 +31,11 @@ pub struct ISO20022Address {
     pub country: Option<String>,              // Nation with its own government.
     pub district_name: Option<String>,        //Identifies a subdivision within a country sub-division.
     pub country_sub_division: Option<String>, // Identifies a subdivision of a country such as state, region, county.
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+pub enum AddressKind {
+    #[default]
+    Particular,
+    Company,
 }

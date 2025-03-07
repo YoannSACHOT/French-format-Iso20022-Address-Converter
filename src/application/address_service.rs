@@ -1,5 +1,5 @@
-use crate::domain::models::ISO20022Address;
-use crate::domain::{models::FrenchAddress, repository::AddressRepository, usecases::AddressKind};
+use crate::domain::models::{AddressKind, ISO20022Address};
+use crate::domain::{models::FrenchAddress, repository::AddressRepository};
 
 pub struct AddressService {
     repository: Box<dyn AddressRepository>,
