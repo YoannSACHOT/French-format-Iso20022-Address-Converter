@@ -1,7 +1,8 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 
-#[derive(Builder, Debug, Serialize, Deserialize, Clone)]
+#[derive(Builder, Debug, Serialize, Deserialize, Clone, Default)]
+#[builder(default)]
 pub struct FrenchAddress {
     pub id: String,
     pub line1: Option<String>, // Name of the company or individual (private person)
@@ -14,6 +15,7 @@ pub struct FrenchAddress {
 }
 
 #[derive(Builder, Debug, Serialize, Deserialize, Clone, Default)]
+#[builder(default)]
 pub struct ISO20022Address {
     pub id: String,
     pub recipient_name: Option<String>, //Name of a person or organization.
