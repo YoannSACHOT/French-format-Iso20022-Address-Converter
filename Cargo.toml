@@ -11,6 +11,7 @@ regex = "1.7"
 uuid = { version = "1.15.1", features = ["v4"] }
 predicates = "3.1.3"
 postgres = "0.19"  # or the latest version available
+derive_builder = "0.20.2"
 
 [dev-dependencies]
 assert_cmd = "2.0"

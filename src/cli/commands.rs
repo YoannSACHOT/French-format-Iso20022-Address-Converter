@@ -1,5 +1,5 @@
 use crate::application::address_service::AddressService;
-use crate::domain::models::{AddressKind, FrenchAddress};
+use crate::domain::models::{AddressKind, FrenchAddressBuilder};
 use crate::domain::repository::AddressRepository;
 use clap::{Parser, Subcommand};
 use uuid::Uuid;
@@ -151,16 +151,19 @@ fn add_address(
         }
     };
 
-    let french_address = FrenchAddress {
-        id: id.clone(),
-        line1,
-        line2,
-        line3,
-        line4,
-        line5,
-        line6,
-        line7,
-    };
+    // Instead of FrenchAddress { ... }, do:
+    let french_address = FrenchAddressBuilder::default()
+        .id(id.clone())
+        .line1(line1)
+        .line2(line2)
+        .line3(line3)
+        .line4(line4)
+        .line5(line5)
+        .line6(line6)
+        .line7(line7)
+        .build()
+        .expect("Failed to build FrenchAddress from CLI input");
+
     let converted_address = service.convert_to_iso(&french_address, kind);
 
     if service.add_address(converted_address).is_ok() {
@@ -200,7 +203,7 @@ fn update_address(
     line6: Option<String>,
     line7: Option<String>,
 ) {
-    if let Some(existing_address) = service.get_address(&id) {
+    if let Some(existing_iso) = service.get_address(&id) {
         let kind = match kind.to_lowercase().as_str() {
             "company" => AddressKind::Company,
             "particular" => AddressKind::Particular,
@@ -210,19 +213,28 @@ fn update_address(
             }
         };
 
-        let updated_french_address = FrenchAddress {
-            id: id.clone(),
-            line1: line1.or(existing_address.street_name.clone()),
-            line2: line2.or(existing_address.department.clone()),
-            line3: line3.or(existing_address.floor.clone()),
-            line4: line4.or(existing_address.street_name.clone()),
-            line5: line5.or(existing_address.post_box.clone()),
-            line6: line6.or(existing_address.post_code.clone()),
-            line7: line7.or(existing_address.country.clone()),
-        };
-        let updated_address = service.convert_to_iso(&updated_french_address, kind);
+        // Convert the old ISO back to French (so we can easily manipulate line1..line7)
+        let existing_french = service.convert_to_french(&existing_iso);
 
-        if service.update_address(updated_address).is_ok() {
+        // Merge old fields with new CLI arguments, then build
+        let updated_french = FrenchAddressBuilder::default()
+            .id(id.clone())
+            // Use `.or(existing_french.lineX.clone())` to keep existing data if new is None
+            .line1(line1.or(existing_french.line1))
+            .line2(line2.or(existing_french.line2))
+            .line3(line3.or(existing_french.line3))
+            .line4(line4.or(existing_french.line4))
+            .line5(line5.or(existing_french.line5))
+            .line6(line6.or(existing_french.line6))
+            .line7(line7.or(existing_french.line7))
+            .build()
+            .expect("Failed to build updated FrenchAddress");
+
+        // Convert back to ISO for storage
+        let updated_iso = service.convert_to_iso(&updated_french, kind);
+
+        // Save it
+        if service.update_address(updated_iso).is_ok() {
             println!("Address with ID {} updated successfully.", id);
         } else {
             println!("Failed to update address.");

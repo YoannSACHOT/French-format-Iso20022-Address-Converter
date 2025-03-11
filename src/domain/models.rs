@@ -1,6 +1,8 @@
+use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Builder, Debug, Serialize, Deserialize, Clone, Default)]
+#[builder(default)]
 pub struct FrenchAddress {
     pub id: String,
     pub line1: Option<String>, // Name of the company or individual (private person)
@@ -12,24 +14,25 @@ pub struct FrenchAddress {
     pub line7: Option<String>, // Country name
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Builder, Debug, Serialize, Deserialize, Clone, Default)]
+#[builder(default)]
 pub struct ISO20022Address {
     pub id: String,
-    pub recipient_name : Option<String>,      //Name of a person or organization.
-    pub kind: AddressKind,                    //enum Company or Particular (default)
-    pub department: Option<String>,           //Identification of a division of a large organization or building.
-    pub sub_department: Option<String>,       //Identification of a subdivision of a large organization or building.
-    pub building_name: Option<String>,        //Name of a building or house
-    pub floor: Option<String>,                //Floor or storey within a building.
-    pub room: Option<String>,                 // Building room number
-    pub street_name: Option<String>,          // Name of a street or thoroughfare.
-    pub building_number: Option<String>,      // Number that identifies the position of a building on a street.
-    pub post_box: Option<String>,             // Numbered box in a post office, assigned to a person or organization, where letters are kept until called for.
-    pub town_location_name: Option<String>,   // Specific location within the town.
-    pub post_code: Option<String>,            // Identifier consisting of letters and/or numbers that is added to a postal address to assist the sorting of mail.
-    pub town_name: Option<String>,            // Name of a built-up area, with defined boundaries, and a local government.
-    pub country: Option<String>,              // Nation with its own government.
-    pub district_name: Option<String>,        //Identifies a subdivision within a country sub-division.
+    pub recipient_name: Option<String>, //Name of a person or organization.
+    pub kind: AddressKind,              //enum Company or Particular (default)
+    pub department: Option<String>, //Identification of a division of a large organization or building.
+    pub sub_department: Option<String>, //Identification of a subdivision of a large organization or building.
+    pub building_name: Option<String>,  //Name of a building or house
+    pub floor: Option<String>,          //Floor or storey within a building.
+    pub room: Option<String>,           // Building room number
+    pub street_name: Option<String>,    // Name of a street or thoroughfare.
+    pub building_number: Option<String>, // Number that identifies the position of a building on a street.
+    pub post_box: Option<String>, // Numbered box in a post office, assigned to a person or organization, where letters are kept until called for.
+    pub town_location_name: Option<String>, // Specific location within the town.
+    pub post_code: Option<String>, // Identifier consisting of letters and/or numbers that is added to a postal address to assist the sorting of mail.
+    pub town_name: Option<String>, // Name of a built-up area, with defined boundaries, and a local government.
+    pub country: Option<String>,   // Nation with its own government.
+    pub district_name: Option<String>, //Identifies a subdivision within a country sub-division.
     pub country_sub_division: Option<String>, // Identifies a subdivision of a country such as state, region, county.
 }
 
