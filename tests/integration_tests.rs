@@ -1,9 +1,8 @@
-use fraddris020022::application::address_service::AddressService;
-use fraddris020022::domain::models::{AddressKind, FrenchAddress, ISO20022Address};
-
-use fraddris020022::domain::repository::AddressRepository;
-use fraddris020022::infrastructure::in_memory_repository::InMemoryAddressRepository;
 use uuid::Uuid;
+use fraddriso20022::application::address_service::AddressService;
+use fraddriso20022::domain::models::{AddressKind, FrenchAddress, ISO20022Address};
+use fraddriso20022::domain::repository::AddressRepository;
+use fraddriso20022::infrastructure::in_memory_repository::InMemoryAddressRepository;
 
 #[test]
 fn particular_with_all_data() {
