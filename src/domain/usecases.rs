@@ -79,9 +79,13 @@ pub fn convert_to_iso(address: &FrenchAddress, kind: AddressKind) -> ISO20022Add
     }
 
     println!("DEBUG - ISO20022Address after update: {:#?}", iso);
+
+    if let Err(e) = crate::domain::validation::validate_iso20022_address(&iso) {
+        return Err(format!("Validation error: {:?}", e)).unwrap();
+    }
+
     iso
 }
-
 
 pub fn convert_to_french(iso: &ISO20022Address) -> FrenchAddress {
     let mut french = FrenchAddress {
