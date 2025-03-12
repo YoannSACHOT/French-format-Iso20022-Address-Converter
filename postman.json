@@ -1,0 +1,145 @@
+{
+  "info": {
+    "_postman_id": "dbe2f50a-9fc3-41d7-9d0f-31a0a8df5f52",
+    "name": "fraddriso20022 REST API",
+    "description": "Collection for testing the fraddriso20022 REST API endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080"
+    },
+    {
+      "key": "addressId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "List Addresses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "addresses"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Address by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/addresses/{{addressId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "addresses",
+            "{{addressId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Address",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"kind\": \"company\",\n  \"line1\": \"DURAND SA\",\n  \"line2\": \"Purchasing Department\",\n  \"line3\": \"Industrial Zone\",\n  \"line4\": \"22BIS Rue des Fleurs\",\n  \"line5\": \"BP 40122\",\n  \"line6\": \"33506 LIBOURNE CEDEX\",\n  \"line7\": \"France\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/addresses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "addresses"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Address",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"kind\": \"company\",\n  \"line1\": \"DURAND SA Updated\",\n  \"line2\": \"Updated Department\",\n  \"line3\": \"New Industrial Zone\",\n  \"line4\": \"22BIS Rue des Fleurs\",\n  \"line5\": \"BP 40122\",\n  \"line6\": \"33506 LIBOURNE CEDEX\",\n  \"line7\": \"France\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/addresses/{{addressId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "addresses",
+            "{{addressId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Address",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/addresses/{{addressId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "addresses",
+            "{{addressId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Convert Address",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/addresses/{{addressId}}/convert",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "addresses",
+            "{{addressId}}",
+            "convert"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
