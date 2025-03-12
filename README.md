@@ -2,62 +2,59 @@
 
 ## Description
 
-**fraddriso20022** is a command-line application designed to convert French postal addresses to ISO 20022 format and vice versa. Built with clean architecture principles, the project ensures high modularity, maintainability, and ease of future extension.
+**fraddriso20022** est une application en ligne de commande et via une API REST conçue pour convertir les adresses postales françaises au format ISO 20022 et inversement. Construit selon les principes de la Clean Architecture, le projet garantit une forte modularité, une maintenabilité accrue et une facilité d'extension future.
 
 ## Features
 
-- **Address Conversion**:
-    - Convert French postal addresses to ISO 20022 format.
-    - Convert ISO 20022 addresses back to French format.
-- **CRUD Operations**:
-    - Add, retrieve, update, and delete addresses stored in a local JSON repository, MongoDB, or in-memory store.
-- **Repository Patterns**:
-    - Supports multiple storage backends:
-        - File-based (JSON)
-        - In-memory (for testing)
+- **Conversion d'adresses** :
+    - Convertir des adresses postales françaises en format ISO 20022.
+    - Convertir des adresses ISO 20022 en format français.
+- **Opérations CRUD** :
+    - Ajouter, récupérer, mettre à jour et supprimer des adresses stockées dans un dépôt local (JSON), MongoDB ou en mémoire.
+- **Patterns de dépôt** :
+    - Supporte plusieurs backends de stockage :
+        - Fichier (JSON)
+        - En mémoire (pour les tests)
         - MongoDB
-        - PostgreSQL (planned)
-- **Clean Architecture**:
-    - Clear separation of business logic (domain) from infrastructure concerns.
-- **Command-Line Interface**:
-    - Intuitive CLI built with [clap](https://crates.io/crates/clap) to interact with the application.
+        - PostgreSQL (*prévu*)
+- **Clean Architecture** :
+    - Séparation claire de la logique métier (domaine) et des préoccupations d'infrastructure.
+- **Interface en ligne de commande (CLI)** :
+    - Interface intuitive basée sur [clap](https://crates.io/crates/clap).
+- **API REST** :
+    - Expose les mêmes fonctionnalités via des endpoints REST, construits avec [Actix-web](https://actix.rs/).
 
-## Prerequisites
+## Prérequis
 
-- [Rust](https://www.rust-lang.org/tools/install) (latest stable version recommended)
+- [Rust](https://www.rust-lang.org/tools/install) (version stable recommandée)
 
 ## Installation
 
-1. **Clone the Repository**  
+1. **Cloner le dépôt**  
    ```sh
    git clone https://github.com/yoannsachot/fraddriso20022.git
    cd fraddriso20022
    ```
 
-2. **Build the Project**
+2. **Construire le projet**
    ```sh
    cargo build --release
    ```
 
-3. **Run the Application**
-   ```sh
-   cargo run -- --help
-   ```
+## Variables d'environnement
 
-## Environment Variables
+Pour configurer le backend du dépôt, définissez les variables d'environnement suivantes :
 
-To configure the repository backend, set the following environment variables:
+- **SELECT_REPO** : Type de dépôt. Valeurs acceptées :
+    - `file` (par défaut) : Utilise un fichier JSON (`addresses.json`).
+    - `inmemory` : Utilise un dépôt en mémoire (pour les tests ou usage éphémère).
+    - `mongo` ou `mongodb` : Utilise MongoDB. Dans ce cas :
+        - **MONGO_URI** : Chaîne de connexion MongoDB (exemple : `mongodb://localhost:27017`).
+        - **MONGO_DB_NAME** : Nom de la base de données (par défaut `addresses_db`).
+        - **MONGO_DB_COLLECTION** : Nom de la collection (par défaut `addresses`).
+    - `postgres` : *Prévu* (non implémenté actuellement).
 
-- `SELECT_REPO`: Defines the repository type. Accepted values:
-    - `file` (default): Uses a JSON file (`addresses.json`) for storage.
-    - `inmemory`: Uses an in-memory repository (for testing or ephemeral use).
-    - `mongo` or `mongodb`: Uses MongoDB for storage. In this case:
-        - `MONGO_URI`: Required. The MongoDB connection string (e.g., `mongodb://localhost:27017`).
-        - `MONGO_DB_NAME`: Name of the MongoDB database (defaults to `addresses_db` if unset).
-        - `MONGO_DB_COLLECTION`: Collection name (defaults to `addresses` if unset).
-    - `postgres`: *Planned* (currently not implemented in the code).
-
-Example (MongoDB on UNIX shell):
+Exemple (shell UNIX) :
 ```sh
 export SELECT_REPO=mongo
 export MONGO_URI="mongodb://localhost:27017"
@@ -65,7 +62,7 @@ export MONGO_DB_NAME="addresses_db"
 export MONGO_DB_COLLECTION="addresses"
 ```
 
-On Windows (PowerShell):
+Exemple (PowerShell sous Windows) :
 ```powershell
 $env:SELECT_REPO="mongo"
 $env:MONGO_URI="mongodb://localhost:27017"
@@ -75,59 +72,120 @@ $env:MONGO_DB_COLLECTION="addresses"
 
 ## Usage
 
-Below are some common commands you can run after building the project:
+### Interface en ligne de commande (CLI)
 
-### Add an Address
+Voici quelques commandes courantes après construction :
+
+#### Ajouter une adresse
 ```sh
-cargo run -- add --kind <company|particular> \
-    -a "Recipient/Company Name" \
-    -b "Department/Sub-Department or Room" \
-    -c "Floor info" \
-    -d "Street number and name" \
-    -e "PO Box" \
-    -f "Postal Code and City" \
-    -g "Country"
+cargo run --bin fraddriso20022-cli -- add --kind <company|particular> \
+    -a "Nom du destinataire/société" \
+    -b "Département ou numéro de chambre" \
+    -c "Informations d'étage ou d'entrée" \
+    -d "Numéro et nom de la rue" \
+    -e "BP ou informations complémentaires" \
+    -f "Code postal et ville" \
+    -g "Pays"
 ```
-- **--kind**: Address type (`company` or `particular`).
-- **-a**: Recipient name (optional).
-- **-b**: Department or room (depending on `company` or `particular`).
-- **-c**: Floor or entry details (optional).
-- **-d**: Street and number (optional).
-- **-e**: PO Box or additional info (optional).
-- **-f**: Postal code and city (optional).
-- **-g**: Country (optional).
+- **--kind** : Type d'adresse (`company` ou `particular`).
+- **-a** à **-g** : Champs facultatifs pour renseigner les lignes d'adresse.
 
-### List All Addresses
+#### Lister toutes les adresses
 ```sh
-cargo run -- list
+cargo run --bin fraddriso20022-cli -- list
 ```
 
-### Retrieve an Address by ID
+#### Récupérer une adresse par ID
 ```sh
-cargo run -- get --id <ID>
+cargo run --bin fraddriso20022-cli -- get --id <ID>
 ```
 
-### Convert an Address (ISO 20022 → French)
+#### Convertir une adresse (ISO 20022 → Français)
 ```sh
-cargo run -- convert --id <ID>
+cargo run --bin fraddriso20022-cli -- convert --id <ID>
 ```
-Displays the address in French format.
+Affiche l'adresse au format français.
 
-### Update an Address
+#### Mettre à jour une adresse
 ```sh
-cargo run -- update --id <ID> --kind <company|particular> \
-    -a "New Name" \
-    -b "New Dept or Room" \
+cargo run --bin fraddriso20022-cli -- update --id <ID> --kind <company|particular> \
+    -a "Nouveau nom" \
+    -b "Nouveau département/chambre" \
     ...
 ```
-Updates only the fields you provide; unspecified fields are left unchanged.
+Met à jour uniquement les champs renseignés.
 
-### Delete an Address
+#### Supprimer une adresse
 ```sh
-cargo run -- delete --id <ID>
+cargo run --bin fraddriso20022-cli -- delete --id <ID>
 ```
 
-## Project Structure
+### API REST
+
+Le projet propose également une API REST permettant d'interagir avec les adresses.
+
+#### Démarrer le serveur REST
+
+Pour lancer le serveur REST, exécutez :
+```sh
+cargo run --bin fraddriso20022-rest
+```
+Le serveur démarre sur [http://127.0.0.1:8080](http://127.0.0.1:8080).
+
+#### Endpoints disponibles
+
+- **GET /addresses**  
+  Récupère la liste de toutes les adresses.
+
+- **GET /addresses/{id}**  
+  Récupère une adresse spécifique par son ID.
+
+- **POST /addresses**  
+  Ajoute une nouvelle adresse.  
+  **Corps de la requête (JSON) :**
+  ```json
+  {
+      "kind": "company|particular",
+      "line1": "Nom du destinataire/société",
+      "line2": "Département ou chambre",
+      "line3": "Étage ou informations d'entrée",
+      "line4": "Rue et numéro",
+      "line5": "BP ou information complémentaire",
+      "line6": "Code postal et ville",
+      "line7": "Pays"
+  }
+  ```
+
+- **PUT /addresses/{id}**  
+  Met à jour une adresse existante par son ID.  
+  **Corps de la requête (JSON) :** (Les champs omis conservent leurs valeurs existantes)
+  ```json
+  {
+      "kind": "company|particular",
+      "line1": "Nouveau nom",
+      "line2": "Nouveau département ou chambre",
+      "line3": "Nouvel étage ou infos d'entrée",
+      "line4": "Nouvelle rue et numéro",
+      "line5": "Nouveau BP ou infos complémentaires",
+      "line6": "Nouveau code postal et ville",
+      "line7": "Nouveau pays"
+  }
+  ```
+
+- **DELETE /addresses/{id}**  
+  Supprime une adresse par son ID.
+
+- **GET /addresses/{id}/convert**  
+  Convertit une adresse ISO 20022 stockée en son équivalent au format français.
+
+#### Tester l'API REST
+
+Vous pouvez utiliser des outils comme [Postman](https://www.postman.com/) ou `curl` pour tester les endpoints, par exemple :
+```sh
+curl http://127.0.0.1:8080/addresses
+```
+
+## Structure du projet
 
 ```
 fraddriso20022/
@@ -135,7 +193,8 @@ fraddriso20022/
 ├── LICENSE.md
 ├── README.md
 ├── src/
-│   ├── main.rs
+│   ├── main.rs                 # Point d'entrée CLI
+│   ├── rest_main.rs            # Point d'entrée API REST
 │   ├── lib.rs
 │   ├── application/
 │   │   ├── address_service.rs
@@ -149,10 +208,11 @@ fraddriso20022/
 │   │   ├── usecases.rs
 │   │   └── validation.rs
 │   └── infrastructure/
+│       ├── app_state.rs
 │       ├── file_repository.rs
 │       ├── in_memory_repository.rs
 │       ├── mongo_repository.rs
-│       └── mod.rs
+│       └── rest_controller.rs
 ├── tests/
 │   ├── cli_tests.rs
 │   └── integration_tests.rs
@@ -161,54 +221,55 @@ fraddriso20022/
         └── build-test.yml
 ```
 
-## Testing
+## Tests
 
-Run all unit and integration tests with:
+Exécutez tous les tests unitaires et d'intégration avec :
 ```sh
 cargo test --verbose
 ```
 
-## Architecture & Extensibility
+## Architecture & Extensibilité
 
 ### Clean Architecture
 
-- **Domain Layer**  
-  Contains the internal models (for both French and ISO 20022 formats) and business logic.
+- **Couche Domaine**  
+  Contient les modèles internes (format français et ISO 20022) et la logique métier.
 
-- **Application Layer**  
-  Implements use cases through the `AddressService`, abstracting repository operations and conversion logic.
+- **Couche Application**  
+  Implémente les cas d'utilisation via `AddressService`, en masquant les détails d'implémentation du dépôt et de la conversion.
 
-- **Infrastructure Layer**  
-  Provides concrete implementations of the repository pattern:
-    - File-based repository (using JSON)
-    - In-memory repository (ideal for testing)
-    - MongoDB repository
-    - PostgreSQL repository (planned)
+- **Couche Infrastructure**  
+  Fournit les implémentations concrètes du pattern de dépôt :
+    - Fichier JSON
+    - Mémoire (pour les tests)
+    - MongoDB
+    - PostgreSQL (prévu)
+    - Intègre également le controller REST.
 
-- **CLI Layer**  
-  Manages user interactions via command-line commands, translating inputs into service calls.
+- **Couche CLI**  
+  Gère les interactions utilisateur via des commandes en ligne de commande.
 
-### Future Extensibility
+### Extensibilité future
 
-- **New Interfaces**:  
-  Easily add a REST API or GUI without altering core business logic.
-- **Additional Repositories**:  
-  Integrate with other storage solutions by implementing the `AddressRepository` trait.
+- **Nouvelles interfaces** :  
+  Ajoutez facilement une interface graphique ou une autre API sans modifier la logique métier.
+- **Nouveaux dépôts** :  
+  Intégrez d'autres solutions de stockage en implémentant le trait `AddressRepository`.
 
-## Continuous Integration
+## Intégration Continue
 
-GitHub Actions is used to automate builds and tests on every push and pull request.  
-See [`.github/workflows/build-test.yml`](.github/workflows/build-test.yml) for details.
+GitHub Actions est utilisé pour automatiser les builds et les tests à chaque push ou pull request.  
+Voir [`.github/workflows/build-test.yml`](.github/workflows/build-test.yml) pour plus de détails.
 
 ## Contribution
 
-Contributions are welcome! To contribute:
+Les contributions sont les bienvenues ! Pour contribuer :
 
-1. **Fork** the repository.
-2. **Create a feature branch** (e.g., `feature/new-functionality`).
-3. **Commit** your changes with clear messages.
-4. **Submit a pull request** for review.
+1. **Forkez** le dépôt.
+2. **Créez une branche de fonctionnalité** (ex. : `feature/new-functionality`).
+3. **Commitez** vos changements avec des messages clairs.
+4. **Soumettez une pull request** pour révision.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for details.
+Ce projet est sous licence MIT. Voir [LICENSE.md](LICENSE.md) pour les détails.
