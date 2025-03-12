@@ -10,12 +10,13 @@
     - Convert French postal addresses to ISO 20022 format.
     - Convert ISO 20022 addresses back to French format.
 - **CRUD Operations**:
-    - Add, retrieve, update, and delete addresses stored in a local JSON repository.
+    - Add, retrieve, update, and delete addresses stored in a local JSON repository, MongoDB, or in-memory store.
 - **Repository Patterns**:
     - Supports multiple storage backends:
         - File-based (JSON)
         - In-memory (for testing)
-        - PostgreSQL (planned implementation)
+        - MongoDB
+        - PostgreSQL (planned)
 - **Clean Architecture**:
     - Clear separation of business logic (domain) from infrastructure concerns.
 - **Command-Line Interface**:
@@ -27,28 +28,7 @@
 
 ## Installation
 
-### Environment Variables
-Before running the application, you can set the following environment variables to configure the repository backend:
-
-- `SELECT_REPO`: Defines the repository type. Accepted values:
-    - `file` (default): Uses a JSON file for storage.
-    - `inmemory`: Uses an in-memory repository (for testing purposes).
-    - `postgres`: Uses a PostgreSQL database.
-- `DATABASE_URL`: Required if `SELECT_REPO=postgres`, specifies the PostgreSQL connection string.
-
-To set environment variables in a UNIX shell:
-```sh
-export SELECT_REPO=postgres
-export DATABASE_URL="postgres://user:password@localhost/dbname"
-```
-
-On Windows (PowerShell):
-```powershell
-$env:SELECT_REPO="postgres"
-$env:DATABASE_URL="postgres://user:password@localhost/dbname"
-```
-
-1. **Clone the Repository**
+1. **Clone the Repository**  
    ```sh
    git clone https://github.com/yoannsachot/fraddriso20022.git
    cd fraddriso20022
@@ -64,20 +44,58 @@ $env:DATABASE_URL="postgres://user:password@localhost/dbname"
    cargo run -- --help
    ```
 
+## Environment Variables
+
+To configure the repository backend, set the following environment variables:
+
+- `SELECT_REPO`: Defines the repository type. Accepted values:
+    - `file` (default): Uses a JSON file (`addresses.json`) for storage.
+    - `inmemory`: Uses an in-memory repository (for testing or ephemeral use).
+    - `mongo` or `mongodb`: Uses MongoDB for storage. In this case:
+        - `MONGO_URI`: Required. The MongoDB connection string (e.g., `mongodb://localhost:27017`).
+        - `MONGO_DB_NAME`: Name of the MongoDB database (defaults to `addresses_db` if unset).
+        - `MONGO_DB_COLLECTION`: Collection name (defaults to `addresses` if unset).
+    - `postgres`: *Planned* (currently not implemented in the code).
+
+Example (MongoDB on UNIX shell):
+```sh
+export SELECT_REPO=mongo
+export MONGO_URI="mongodb://localhost:27017"
+export MONGO_DB_NAME="addresses_db"
+export MONGO_DB_COLLECTION="addresses"
+```
+
+On Windows (PowerShell):
+```powershell
+$env:SELECT_REPO="mongo"
+$env:MONGO_URI="mongodb://localhost:27017"
+$env:MONGO_DB_NAME="addresses_db"
+$env:MONGO_DB_COLLECTION="addresses"
+```
+
 ## Usage
+
+Below are some common commands you can run after building the project:
 
 ### Add an Address
 ```sh
-cargo run -- add --kind <company|particular> -a "Recipient Name" -b "Department" -c "Floor" -d "Street" -e "PO Box" -f "Postal Code City" -g "Country"
+cargo run -- add --kind <company|particular> \
+    -a "Recipient/Company Name" \
+    -b "Department/Sub-Department or Room" \
+    -c "Floor info" \
+    -d "Street number and name" \
+    -e "PO Box" \
+    -f "Postal Code and City" \
+    -g "Country"
 ```
-- **--kind**: Address type (`company` or `particular`)
-- **-a**: Recipient name (optional)
-- **-b**: Department or service (optional)
-- **-c**: Floor or entry details (optional)
-- **-d**: Street and number (optional)
-- **-e**: PO Box or additional info (optional)
-- **-f**: Postal code and city (optional)
-- **-g**: Country (optional)
+- **--kind**: Address type (`company` or `particular`).
+- **-a**: Recipient name (optional).
+- **-b**: Department or room (depending on `company` or `particular`).
+- **-c**: Floor or entry details (optional).
+- **-d**: Street and number (optional).
+- **-e**: PO Box or additional info (optional).
+- **-f**: Postal code and city (optional).
+- **-g**: Country (optional).
 
 ### List All Addresses
 ```sh
@@ -93,11 +111,16 @@ cargo run -- get --id <ID>
 ```sh
 cargo run -- convert --id <ID>
 ```
+Displays the address in French format.
 
 ### Update an Address
 ```sh
-cargo run -- update --id <ID> --kind <company|particular> -a "Updated Name" -b "Updated Department" ...
+cargo run -- update --id <ID> --kind <company|particular> \
+    -a "New Name" \
+    -b "New Dept or Room" \
+    ...
 ```
+Updates only the fields you provide; unspecified fields are left unchanged.
 
 ### Delete an Address
 ```sh
@@ -124,12 +147,12 @@ fraddriso20022/
 │   │   ├── models.rs
 │   │   ├── repository.rs
 │   │   ├── usecases.rs
-│   │   └── mod.rs
+│   │   └── validation.rs
 │   └── infrastructure/
 │       ├── file_repository.rs
 │       ├── in_memory_repository.rs
-│       ├── mod.rs
-│       └── postgresql_repository.rs
+│       ├── mongo_repository.rs
+│       └── mod.rs
 ├── tests/
 │   ├── cli_tests.rs
 │   └── integration_tests.rs
@@ -149,31 +172,33 @@ cargo test --verbose
 
 ### Clean Architecture
 
-- **Domain Layer**:  
+- **Domain Layer**  
   Contains the internal models (for both French and ISO 20022 formats) and business logic.
 
-- **Application Layer**:  
+- **Application Layer**  
   Implements use cases through the `AddressService`, abstracting repository operations and conversion logic.
 
-- **Infrastructure Layer**:  
+- **Infrastructure Layer**  
   Provides concrete implementations of the repository pattern:
     - File-based repository (using JSON)
     - In-memory repository (ideal for testing)
+    - MongoDB repository
     - PostgreSQL repository (planned)
 
-- **CLI Layer**:  
+- **CLI Layer**  
   Manages user interactions via command-line commands, translating inputs into service calls.
 
 ### Future Extensibility
 
-- **New Presenters**:  
+- **New Interfaces**:  
   Easily add a REST API or GUI without altering core business logic.
 - **Additional Repositories**:  
-  Integrate with other storage solutions (e.g., cloud storage, alternative databases) by implementing the `AddressRepository` trait.
+  Integrate with other storage solutions by implementing the `AddressRepository` trait.
 
 ## Continuous Integration
 
-The project uses GitHub Actions to automate builds and tests on every push and pull request. See the workflow configuration in [`.github/workflows/build-test.yml`](.github/workflows/build-test.yml).
+GitHub Actions is used to automate builds and tests on every push and pull request.  
+See [`.github/workflows/build-test.yml`](.github/workflows/build-test.yml) for details.
 
 ## Contribution
 
