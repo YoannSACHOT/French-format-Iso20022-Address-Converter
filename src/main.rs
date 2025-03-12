@@ -1,11 +1,10 @@
 use clap::Parser;
-use fraddris020022::cli;
-use fraddris020022::cli::commands::Cli;
-use fraddris020022::domain::repository::AddressRepository;
-use fraddris020022::infrastructure::{
-    file_repository::FileBasedAddressRepository, in_memory_repository::InMemoryAddressRepository,
-    mongo_repository::MongoAddressRepository,
-};
+use fraddriso20022::cli;
+use fraddriso20022::cli::commands::Cli;
+use fraddriso20022::domain::repository::AddressRepository;
+use fraddriso20022::infrastructure::file_repository::FileBasedAddressRepository;
+use fraddriso20022::infrastructure::in_memory_repository::InMemoryAddressRepository;
+use fraddriso20022::infrastructure::mongo_repository::MongoAddressRepository;
 use std::env;
 
 fn main() {
