@@ -1,5 +1,5 @@
 use crate::domain::models::{AddressKind, FrenchAddressBuilder};
-use crate::rest_main::AppState;
+use crate::infrastructure::app_state::AppState;
 use actix_web::{
     HttpResponse, Responder, delete, get, post, put,
     web::{self, Json, Path},
