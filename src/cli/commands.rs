@@ -151,8 +151,7 @@ fn add_address(
         }
     };
 
-    // Instead of FrenchAddress { ... }, do:
-    let french_address = FrenchAddressBuilder::default()
+    let french_address = FrenchAddressBuilder::new()
         .id(id.clone())
         .line1(line1)
         .line2(line2)
@@ -217,7 +216,7 @@ fn update_address(
         let existing_french = service.convert_to_french(&existing_iso);
 
         // Merge old fields with new CLI arguments, then build
-        let updated_french = FrenchAddressBuilder::default()
+        let updated_french = FrenchAddressBuilder::new()
             .id(id.clone())
             // Use `.or(existing_french.lineX.clone())` to keep existing data if new is None
             .line1(line1.or(existing_french.line1))
