@@ -15,10 +15,19 @@ mongodb = { version = "2.8.2", default-features = false, features = ["sync"] }
 
 derive_builder = "0.20.2"
 
+actix-web = "4"
+
 [dev-dependencies]
 assert_cmd = "2.0"
 predicates = "3.0"
 
 [lib]
-name = "fraddris020022"
 path = "src/lib.rs"
+
+[[bin]]
+name = "fraddriso20022-cli"
+path = "src/main.rs"
+
+[[bin]]
+name = "fraddriso20022-rest"
+path = "src/rest_main.rs"

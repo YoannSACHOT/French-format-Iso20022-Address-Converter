@@ -12,7 +12,7 @@ fn test_cli_end_to_end() {
     println!("🚀 Ajout d'une nouvelle adresse...");
 
     // Ajoute une adresse
-    let mut cmd = Command::cargo_bin("fraddriso20022").unwrap();
+    let mut cmd = Command::cargo_bin("fraddriso20022-cli").unwrap();
     let add_output = cmd
         .arg("add")
         .arg("--kind")
@@ -67,7 +67,7 @@ fn test_cli_end_to_end() {
     );
 
     // Récupérer l'adresse ajoutée en utilisant l'ID extrait
-    let mut cmd_get = Command::cargo_bin("fraddriso20022").unwrap();
+    let mut cmd_get = Command::cargo_bin("fraddriso20022-cli").unwrap();
     cmd_get
         .arg("get")
         .arg("--id")
@@ -80,7 +80,7 @@ fn test_cli_end_to_end() {
 
     // 🔄 **Mise à jour de l'adresse**
     println!("✏️ Mise à jour de l'adresse...");
-    let mut cmd_update = Command::cargo_bin("fraddriso20022").unwrap();
+    let mut cmd_update = Command::cargo_bin("fraddriso20022-cli").unwrap();
     cmd_update
         .arg("update")
         .arg("--id")
@@ -96,7 +96,7 @@ fn test_cli_end_to_end() {
         .stdout(contains("updated successfully"));
 
     // Vérifier que l'adresse a bien été mise à jour
-    let mut cmd_get_updated = Command::cargo_bin("fraddriso20022").unwrap();
+    let mut cmd_get_updated = Command::cargo_bin("fraddriso20022-cli").unwrap();
     cmd_get_updated
         .arg("get")
         .arg("--id")
@@ -110,7 +110,7 @@ fn test_cli_end_to_end() {
 
     // 🔄 **Conversion en adresse française**
     println!("🔄 Conversion en adresse française...");
-    let mut cmd_convert = Command::cargo_bin("fraddriso20022").unwrap();
+    let mut cmd_convert = Command::cargo_bin("fraddriso20022-cli").unwrap();
     cmd_convert
         .arg("convert")
         .arg("--id")
@@ -129,7 +129,7 @@ fn test_cli_end_to_end() {
 
     // 🗑 **Suppression de l'adresse**
     println!("🗑️ Suppression de l'adresse...");
-    let mut cmd_delete = Command::cargo_bin("fraddriso20022").unwrap();
+    let mut cmd_delete = Command::cargo_bin("fraddriso20022-cli").unwrap();
     cmd_delete
         .arg("delete")
         .arg("--id")
@@ -139,7 +139,7 @@ fn test_cli_end_to_end() {
         .stdout(contains("deleted successfully"));
 
     // Vérifier que l'adresse a bien été supprimée
-    let mut cmd_get_deleted = Command::cargo_bin("fraddriso20022").unwrap();
+    let mut cmd_get_deleted = Command::cargo_bin("fraddriso20022-cli").unwrap();
     cmd_get_deleted
         .arg("get")
         .arg("--id")
