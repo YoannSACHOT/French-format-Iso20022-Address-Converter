@@ -2,7 +2,6 @@ use crate::domain::models::ISO20022Address;
 use crate::domain::repository::{AddressRepository, ReadAddressRepository};
 use mongodb::{
     bson::doc,
-    options::ClientOptions,
     sync::{Client, Collection},
 };
 
@@ -13,13 +12,9 @@ pub struct MongoAddressRepository {
 
 impl MongoAddressRepository {
     pub fn new(uri: &str, db_name: &str, coll_name: &str) -> Result<Self, String> {
-        // parse connection options (blocking if needed):
-        let client_options = ClientOptions::parse(uri).map_err(|e| e.to_string())?;
-        // build synchronous Mongo client
-        let client = Client::with_options(client_options).map_err(|e| e.to_string())?;
+        let client = Client::with_uri_str(uri).map_err(|e| e.to_string())?;
         let db = client.database(db_name);
         let collection = db.collection::<ISO20022Address>(coll_name);
-
         Ok(Self { collection })
     }
 }
@@ -27,32 +22,27 @@ impl MongoAddressRepository {
 impl AddressRepository for MongoAddressRepository {
     fn save(&mut self, address: ISO20022Address) -> Result<(), String> {
         self.collection
-            .insert_one(address, None)
+            .insert_one(address)
+            .run()
             .map_err(|e| e.to_string())?;
         Ok(())
     }
 
     fn update(&mut self, address: ISO20022Address) -> Result<(), String> {
         let filter = doc! { "id": &address.id };
-        let result = self
-            .collection
-            .replace_one(filter, address.clone(), None)
+        self.collection
+            .replace_one(filter, address)
+            .run()
             .map_err(|e| e.to_string())?;
-        if result.matched_count == 0 {
-            return Err(format!("No document found with id={}", address.id));
-        }
         Ok(())
     }
 
     fn delete(&mut self, address_id: &str) -> Result<(), String> {
         let filter = doc! { "id": address_id };
-        let result = self
-            .collection
-            .delete_one(filter, None)
+        self.collection
+            .delete_one(filter)
+            .run()
             .map_err(|e| e.to_string())?;
-        if result.deleted_count == 0 {
-            return Err(format!("No document found with id={}", address_id));
-        }
         Ok(())
     }
 }
@@ -60,14 +50,17 @@ impl AddressRepository for MongoAddressRepository {
 impl ReadAddressRepository for MongoAddressRepository {
     fn find_by_id(&self, address_id: &str) -> Option<ISO20022Address> {
         let filter = doc! { "id": address_id };
-        self.collection.find_one(filter, None).ok().flatten() // return None if error or if not found
+        self.collection.find_one(filter).run().unwrap_or_else(|_| None)
     }
 
     fn find_all(&self) -> Vec<ISO20022Address> {
-        let cursor = match self.collection.find(None, None) {
-            Ok(cur) => cur,
+        let cursor = match self.collection.find(doc! {}).run() {
+            Ok(cursor) => cursor,
             Err(_) => return vec![],
         };
-        cursor.filter_map(|res| res.ok()).collect()
+
+        cursor
+            .map(|doc_result| doc_result.unwrap_or_default())
+            .collect()
     }
 }

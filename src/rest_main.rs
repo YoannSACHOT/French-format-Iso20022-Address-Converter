@@ -45,7 +45,7 @@ async fn main() -> std::io::Result<()> {
         query_service: Mutex::new(query_service),
     });
 
-    println!("CQRS Server running at http://127.0.0.1:8080 ...");
+    println!("Server running at http://127.0.0.1:8080 ...");
     HttpServer::new(move || {
         App::new()
             .app_data(shared_state.clone())
