@@ -1,9 +1,10 @@
 use crate::domain::models::ISO20022Address;
-use crate::domain::repository::AddressRepository;
+use crate::domain::repository::{AddressRepository, ReadAddressRepository};
 use serde_json;
 use std::collections::HashMap;
 use std::fs;
 
+#[derive(Clone)]
 pub struct FileBasedAddressRepository {
     file_path: String,
 }
@@ -52,14 +53,14 @@ impl AddressRepository for FileBasedAddressRepository {
             Err("Address not found".to_string())
         }
     }
+}
 
+impl ReadAddressRepository for FileBasedAddressRepository {
     fn find_by_id(&self, address_id: &str) -> Option<ISO20022Address> {
-        let data = self.load_data();
-        data.get(address_id).cloned()
+        self.load_data().get(address_id).cloned()
     }
 
     fn find_all(&self) -> Vec<ISO20022Address> {
-        let data = self.load_data();
-        data.values().cloned().collect()
+        self.load_data().values().cloned().collect()
     }
 }

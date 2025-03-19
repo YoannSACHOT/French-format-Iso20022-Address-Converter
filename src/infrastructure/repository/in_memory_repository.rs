@@ -1,7 +1,8 @@
 use crate::domain::models::ISO20022Address;
-use crate::domain::repository::AddressRepository;
+use crate::domain::repository::{AddressRepository, ReadAddressRepository};
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct InMemoryAddressRepository {
     addresses: HashMap<String, ISO20022Address>,
 }
@@ -36,7 +37,9 @@ impl AddressRepository for InMemoryAddressRepository {
             Err("Adresse non trouvée".to_string())
         }
     }
+}
 
+impl ReadAddressRepository for InMemoryAddressRepository {
     fn find_by_id(&self, address_id: &str) -> Option<ISO20022Address> {
         self.addresses.get(address_id).cloned()
     }
