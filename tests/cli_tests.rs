@@ -1,5 +1,5 @@
 use assert_cmd::Command;
-use predicates::str::contains;
+use predicates::str::{contains, is_match};
 use regex::Regex;
 use std::path::Path;
 use std::{fs, str};
@@ -124,7 +124,6 @@ fn test_cli_end_to_end() {
         .stdout(contains("33506")) // ✅ Corrige l'espace en trop dans "33506 "
         .stdout(contains("France"));
 
-
     println!("✅ Conversion réussie !");
 
     // 🗑 **Suppression de l'adresse**
@@ -146,7 +145,7 @@ fn test_cli_end_to_end() {
         .arg(&id)
         .assert()
         .success()
-        .stdout(predicates::str::is_match("Address with ID .* not found").unwrap());
+        .stderr(is_match(r"Address with ID .* not found").unwrap());
 
     println!("✅ Adresse supprimée avec succès !");
 }

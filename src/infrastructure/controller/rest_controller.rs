@@ -1,11 +1,13 @@
-use crate::domain::models::{AddressKind, FrenchAddressBuilder};
-use crate::infrastructure::app_state::AppState;
 use actix_web::{
-    HttpResponse, Responder, delete, get, post, put,
-    web::{self, Json, Path},
+    delete, get, post, put, web::{self, Json, Path}, HttpResponse,
+    Responder,
 };
 use serde::Deserialize;
 use uuid::Uuid;
+
+use crate::domain::models::{AddressKind, FrenchAddressBuilder};
+use crate::domain::usecases::{convert_to_french, convert_to_iso};
+use crate::infrastructure::app_state::AppState;
 
 #[derive(Deserialize)]
 pub struct FrenchAddressPayload {
@@ -30,17 +32,32 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
 
 #[get("/addresses")]
 async fn list_addresses(data: web::Data<AppState>) -> impl Responder {
-    let service_guard = data.service.lock().unwrap();
-    let addresses = service_guard.get_all_addresses();
-    HttpResponse::Ok().json(addresses)
+    let query_service = data.query_service.lock().unwrap();
+    let iso_addresses = query_service.get_all_addresses();
+    HttpResponse::Ok().json(iso_addresses)
 }
 
 #[get("/addresses/{id}")]
 async fn get_address(data: web::Data<AppState>, path: Path<String>) -> impl Responder {
     let address_id = path.into_inner();
-    let service_guard = data.service.lock().unwrap();
-    match service_guard.get_address(&address_id) {
-        Some(addr) => HttpResponse::Ok().json(addr),
+    let query_service = data.query_service.lock().unwrap();
+
+    match query_service.get_address(&address_id) {
+        Some(iso_address) => HttpResponse::Ok().json(iso_address),
+        None => HttpResponse::NotFound().body(format!("Address {} not found", address_id)),
+    }
+}
+
+#[get("/addresses/{id}/convert")]
+async fn convert_address(data: web::Data<AppState>, path: Path<String>) -> impl Responder {
+    let address_id = path.into_inner();
+    let query_service = data.query_service.lock().unwrap();
+
+    match query_service.get_address(&address_id) {
+        Some(iso_address) => {
+            let french = convert_to_french(&iso_address);
+            HttpResponse::Ok().json(french)
+        }
         None => HttpResponse::NotFound().body(format!("Address {} not found", address_id)),
     }
 }
@@ -50,12 +67,16 @@ async fn add_address(
     data: web::Data<AppState>,
     payload: Json<FrenchAddressPayload>,
 ) -> impl Responder {
-    let mut service_guard = data.service.lock().unwrap();
+    let mut command_service = data.command_service.lock().unwrap();
     let id = Uuid::new_v4().to_string();
+
+    // Vérifier la validité du "kind" (company / particular)
     let kind = match parse_kind(&payload.kind) {
         Ok(k) => k,
-        Err(err_resp) => return err_resp,
+        Err(e) => return e, // renvoie un HttpResponse d'erreur
     };
+
+    // Construire l'adresse FrenchAddress
     let french_address = match FrenchAddressBuilder::new()
         .id(id.clone())
         .line1(payload.line1.clone())
@@ -70,10 +91,17 @@ async fn add_address(
         Ok(addr) => addr,
         Err(e) => return HttpResponse::BadRequest().body(e),
     };
-    let iso_address = service_guard.convert_to_iso(&french_address, kind);
-    if let Err(e) = service_guard.add_address(iso_address) {
+
+    // Convertir en ISO20022Address
+    let iso_address = match convert_to_iso(&french_address, kind) {
+        iso => iso,
+    };
+
+    // Enregistrer via le CommandService
+    if let Err(e) = command_service.add_address(iso_address) {
         return HttpResponse::InternalServerError().body(e);
     }
+
     HttpResponse::Created().body(format!("Address created with ID {}", id))
 }
 
@@ -84,16 +112,22 @@ async fn update_address(
     payload: Json<FrenchAddressPayload>,
 ) -> impl Responder {
     let id = path.into_inner();
-    let mut service_guard = data.service.lock().unwrap();
-    let existing_iso = match service_guard.get_address(&id) {
+
+    let query_service = data.query_service.lock().unwrap();
+    let mut command_service = data.command_service.lock().unwrap();
+
+    let kind = match parse_kind(&payload.kind) {
+        Ok(k) => k,
+        Err(e) => return e,
+    };
+
+    let existing_iso = match query_service.get_address(&id) {
         Some(addr) => addr,
         None => return HttpResponse::NotFound().body(format!("Address {} not found", id)),
     };
-    let kind = match parse_kind(&payload.kind) {
-        Ok(k) => k,
-        Err(err_resp) => return err_resp,
-    };
-    let existing_french = service_guard.convert_to_french(&existing_iso);
+
+    let existing_french = convert_to_french(&existing_iso);
+
     let updated_french = match FrenchAddressBuilder::new()
         .id(id.clone())
         .line1(payload.line1.clone().or(existing_french.line1))
@@ -108,33 +142,24 @@ async fn update_address(
         Ok(addr) => addr,
         Err(e) => return HttpResponse::BadRequest().body(e),
     };
-    let updated_iso = service_guard.convert_to_iso(&updated_french, kind);
-    if let Err(e) = service_guard.update_address(updated_iso) {
+
+    let updated_iso = convert_to_iso(&updated_french, kind);
+
+    if let Err(e) = command_service.update_address(updated_iso) {
         return HttpResponse::InternalServerError().body(e);
     }
+
     HttpResponse::Ok().body(format!("Address {} updated", id))
 }
 
 #[delete("/addresses/{id}")]
 async fn delete_address(data: web::Data<AppState>, path: Path<String>) -> impl Responder {
     let id = path.into_inner();
-    let mut service_guard = data.service.lock().unwrap();
-    match service_guard.delete_address(&id) {
+    let mut command_service = data.command_service.lock().unwrap();
+
+    match command_service.delete_address(&id) {
         Ok(_) => HttpResponse::Ok().body(format!("Address {} deleted", id)),
         Err(e) => HttpResponse::NotFound().body(e),
-    }
-}
-
-#[get("/addresses/{id}/convert")]
-async fn convert_address(data: web::Data<AppState>, path: Path<String>) -> impl Responder {
-    let address_id = path.into_inner();
-    let service_guard = data.service.lock().unwrap();
-    match service_guard.get_address(&address_id) {
-        Some(iso_address) => {
-            let french = service_guard.convert_to_french(&iso_address);
-            HttpResponse::Ok().json(french)
-        }
-        None => HttpResponse::NotFound().body(format!("Address {} not found", address_id)),
     }
 }
 

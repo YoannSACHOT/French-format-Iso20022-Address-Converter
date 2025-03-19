@@ -1,11 +1,12 @@
+use crate::domain::models::ISO20022Address;
+use crate::domain::repository::{AddressRepository, ReadAddressRepository};
 use mongodb::{
-    bson::{doc},
+    bson::doc,
     options::ClientOptions,
     sync::{Client, Collection},
 };
-use crate::domain::models::ISO20022Address;
-use crate::domain::repository::AddressRepository;
 
+#[derive(Clone)]
 pub struct MongoAddressRepository {
     collection: Collection<ISO20022Address>,
 }
@@ -54,13 +55,12 @@ impl AddressRepository for MongoAddressRepository {
         }
         Ok(())
     }
+}
 
+impl ReadAddressRepository for MongoAddressRepository {
     fn find_by_id(&self, address_id: &str) -> Option<ISO20022Address> {
         let filter = doc! { "id": address_id };
-        self.collection
-            .find_one(filter, None)
-            .ok()
-            .flatten() // return None if error or if not found
+        self.collection.find_one(filter, None).ok().flatten() // return None if error or if not found
     }
 
     fn find_all(&self) -> Vec<ISO20022Address> {

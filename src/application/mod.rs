@@ -1,1 +1,2 @@
-pub mod address_service;
+pub mod command;
+pub mod query;

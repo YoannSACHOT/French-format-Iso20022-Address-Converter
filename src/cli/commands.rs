@@ -1,26 +1,20 @@
-use crate::application::address_service::AddressService;
-use crate::domain::models::{AddressKind, FrenchAddressBuilder};
-use crate::domain::repository::AddressRepository;
 use clap::{Parser, Subcommand};
+
+use crate::application::command::address_command_service::AddressCommandService;
+use crate::application::query::address_query_service::AddressQueryService;
+use crate::domain::models::{AddressKind, FrenchAddressBuilder, ISO20022Address};
+use crate::domain::usecases::{convert_to_french, convert_to_iso};
 use uuid::Uuid;
 
 #[derive(Parser)]
-#[command(
-    name = "postal_converter",
-    version = "1.0",
-    about = "Convert French addresses to ISO 20022 format"
-)]
-pub struct Cli {
+#[command(name = "postal_converter_cqrs", version = "1.0")]
+pub struct CliCqrs {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: CommandsCqrs,
 }
 
 #[derive(Subcommand)]
-pub enum Commands {
-    Convert {
-        #[arg(short, long)]
-        id: String,
-    },
+pub enum CommandsCqrs {
     Add {
         #[arg(short, long)]
         kind: String,
@@ -39,11 +33,7 @@ pub enum Commands {
         #[arg(short = 'g', long)]
         line7: Option<String>,
     },
-    Get {
-        #[arg(short, long)]
-        id: String,
-    },
-    List,
+
     Update {
         #[arg(short, long)]
         id: String,
@@ -68,14 +58,24 @@ pub enum Commands {
         #[arg(short, long)]
         id: String,
     },
+    Get {
+        #[arg(short, long)]
+        id: String,
+    },
+    List,
+    Convert {
+        #[arg(short, long)]
+        id: String,
+    },
 }
 
-pub fn run(cli: Cli, repo: Box<dyn AddressRepository>) {
-    let mut service = AddressService::new(repo);
-
+pub fn run_cqrs(
+    cli: CliCqrs,
+    command_service: &mut AddressCommandService,
+    query_service: &AddressQueryService,
+) {
     match cli.command {
-        Commands::Convert { id } => convert_address(&service, &id),
-        Commands::Add {
+        CommandsCqrs::Add {
             kind,
             line1,
             line2,
@@ -85,7 +85,7 @@ pub fn run(cli: Cli, repo: Box<dyn AddressRepository>) {
             line6,
             line7,
         } => add_address(
-            &mut service,
+            command_service,
             kind,
             line1,
             line2,
@@ -95,9 +95,8 @@ pub fn run(cli: Cli, repo: Box<dyn AddressRepository>) {
             line6,
             line7,
         ),
-        Commands::Get { id } => get_address(&service, &id),
-        Commands::List => list_addresses(&service),
-        Commands::Update {
+
+        CommandsCqrs::Update {
             id,
             kind,
             line1,
@@ -108,7 +107,8 @@ pub fn run(cli: Cli, repo: Box<dyn AddressRepository>) {
             line6,
             line7,
         } => update_address(
-            &mut service,
+            command_service,
+            query_service,
             id,
             kind,
             line1,
@@ -119,19 +119,17 @@ pub fn run(cli: Cli, repo: Box<dyn AddressRepository>) {
             line6,
             line7,
         ),
-        Commands::Delete { id } => delete_address(&mut service, &id),
-    }
-}
 
-fn convert_address(service: &AddressService, id: &str) {
-    match service.get_address(id) {
-        Some(iso_address) => println!("{:#?}", service.convert_to_french(&iso_address)),
-        None => println!("Address with ID {} not found.", id),
+        CommandsCqrs::Delete { id } => delete_address(command_service, id),
+
+        CommandsCqrs::Get { id } => get_address(query_service, id),
+        CommandsCqrs::List => list_addresses(query_service),
+        CommandsCqrs::Convert { id } => convert_address(query_service, id),
     }
 }
 
 fn add_address(
-    service: &mut AddressService,
+    cmd_svc: &mut AddressCommandService,
     kind: String,
     line1: Option<String>,
     line2: Option<String>,
@@ -142,16 +140,11 @@ fn add_address(
     line7: Option<String>,
 ) {
     let id = Uuid::new_v4().to_string();
-    let kind = match kind.to_lowercase().as_str() {
-        "company" => AddressKind::Company,
-        "particular" => AddressKind::Particular,
-        _ => {
-            eprintln!("Invalid address kind. Use 'company' or 'particular'.");
-            return;
-        }
+    let kind_enum = match parse_kind(&kind) {
+        Ok(k) => k,
+        Err(_) => return,
     };
-
-    let french_address = FrenchAddressBuilder::new()
+    let french = match FrenchAddressBuilder::new()
         .id(id.clone())
         .line1(line1)
         .line2(line2)
@@ -161,37 +154,23 @@ fn add_address(
         .line6(line6)
         .line7(line7)
         .build()
-        .expect("Failed to build FrenchAddress from CLI input");
-
-    let converted_address = service.convert_to_iso(&french_address, kind);
-
-    if service.add_address(converted_address).is_ok() {
-        println!("Address added successfully with ID: {}", id);
-    } else {
-        println!("Failed to add address.");
-    }
-}
-
-fn get_address(service: &AddressService, id: &str) {
-    match service.get_address(id) {
-        Some(address) => println!("{:#?}", address),
-        None => println!("Address with ID {} not found.", id),
-    }
-}
-
-fn list_addresses(service: &AddressService) {
-    let addresses = service.get_all_addresses();
-    if addresses.is_empty() {
-        println!("No addresses found.");
-    } else {
-        for address in addresses {
-            println!("{:#?}", address);
+    {
+        Ok(addr) => addr,
+        Err(e) => {
+            eprintln!("Error building FrenchAddress: {e}");
+            return;
         }
+    };
+    let iso: ISO20022Address = convert_to_iso(&french, kind_enum);
+    match cmd_svc.add_address(iso) {
+        Ok(_) => println!("Address added successfully with ID: {}", id),
+        Err(e) => eprintln!("Failed to add address: {e}"),
     }
 }
 
 fn update_address(
-    service: &mut AddressService,
+    cmd_svc: &mut AddressCommandService,
+    query_svc: &AddressQueryService,
     id: String,
     kind: String,
     line1: Option<String>,
@@ -202,51 +181,91 @@ fn update_address(
     line6: Option<String>,
     line7: Option<String>,
 ) {
-    if let Some(existing_iso) = service.get_address(&id) {
-        let kind = match kind.to_lowercase().as_str() {
-            "company" => AddressKind::Company,
-            "particular" => AddressKind::Particular,
-            _ => {
-                eprintln!("Invalid address kind. Use 'company' or 'particular'.");
-                return;
-            }
-        };
-
-        // Convert the old ISO back to French (so we can easily manipulate line1..line7)
-        let existing_french = service.convert_to_french(&existing_iso);
-
-        // Merge old fields with new CLI arguments, then build
-        let updated_french = FrenchAddressBuilder::new()
-            .id(id.clone())
-            // Use `.or(existing_french.lineX.clone())` to keep existing data if new is None
-            .line1(line1.or(existing_french.line1))
-            .line2(line2.or(existing_french.line2))
-            .line3(line3.or(existing_french.line3))
-            .line4(line4.or(existing_french.line4))
-            .line5(line5.or(existing_french.line5))
-            .line6(line6.or(existing_french.line6))
-            .line7(line7.or(existing_french.line7))
-            .build()
-            .expect("Failed to build updated FrenchAddress");
-
-        // Convert back to ISO for storage
-        let updated_iso = service.convert_to_iso(&updated_french, kind);
-
-        // Save it
-        if service.update_address(updated_iso).is_ok() {
-            println!("Address with ID {} updated successfully.", id);
-        } else {
-            println!("Failed to update address.");
+    let existing_iso = match query_svc.get_address(&id) {
+        Some(iso) => iso,
+        None => {
+            eprintln!("Address with ID {id} not found.");
+            return;
         }
-    } else {
-        println!("Address with ID {} not found.", id);
+    };
+
+    let kind_enum = match parse_kind(&kind) {
+        Ok(k) => k,
+        Err(_) => return,
+    };
+
+    let existing_french = convert_to_french(&existing_iso);
+
+    let updated_french = match FrenchAddressBuilder::new()
+        .id(id.clone())
+        .line1(line1.or(existing_french.line1))
+        .line2(line2.or(existing_french.line2))
+        .line3(line3.or(existing_french.line3))
+        .line4(line4.or(existing_french.line4))
+        .line5(line5.or(existing_french.line5))
+        .line6(line6.or(existing_french.line6))
+        .line7(line7.or(existing_french.line7))
+        .build()
+    {
+        Ok(fa) => fa,
+        Err(e) => {
+            eprintln!("Error building updated address: {e}");
+            return;
+        }
+    };
+
+    let updated_iso = convert_to_iso(&updated_french, kind_enum);
+
+    match cmd_svc.update_address(updated_iso) {
+        Ok(_) => println!("Address with ID {} updated successfully.", id),
+        Err(e) => eprintln!("Failed to update address: {e}"),
     }
 }
 
-fn delete_address(service: &mut AddressService, id: &str) {
-    if service.delete_address(id).is_ok() {
-        println!("Address with ID {} deleted successfully.", id);
+fn delete_address(cmd_svc: &mut AddressCommandService, id: String) {
+    match cmd_svc.delete_address(&id) {
+        Ok(_) => println!("Address with ID {} deleted successfully.", id),
+        Err(e) => eprintln!("Failed to delete address: {e}"),
+    }
+}
+
+fn get_address(query_svc: &AddressQueryService, id: String) {
+    match query_svc.get_address(&id) {
+        Some(iso) => {
+            println!("{iso:#?}");
+        }
+        None => eprintln!("Address with ID {id} not found."),
+    }
+}
+
+fn list_addresses(query_svc: &AddressQueryService) {
+    let all = query_svc.get_all_addresses();
+    if all.is_empty() {
+        println!("No addresses found.");
     } else {
-        println!("Failed to delete address or address not found.");
+        for iso in all {
+            println!("{iso:#?}");
+        }
+    }
+}
+
+fn convert_address(query_svc: &AddressQueryService, id: String) {
+    match query_svc.get_address(&id) {
+        Some(iso) => {
+            let french = convert_to_french(&iso);
+            println!("{french:#?}");
+        }
+        None => eprintln!("Address with ID {id} not found."),
+    }
+}
+
+fn parse_kind(s: &str) -> Result<AddressKind, ()> {
+    match s.to_lowercase().as_str() {
+        "company" => Ok(AddressKind::Company),
+        "particular" => Ok(AddressKind::Particular),
+        _ => {
+            eprintln!("Invalid address kind. Use 'company' or 'particular'.");
+            Err(())
+        }
     }
 }
